@@ -1,0 +1,5 @@
+{
+    "url"        : "http://terrabrasilis.info/files/deterb/deter_public.zip",
+    "outputName" : "newShp.shp",
+    "tableName"  : "newDataBase"
+}
