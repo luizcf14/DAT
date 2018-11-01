@@ -1,19 +1,14 @@
-import wget
-import zipfile
-import shapefile
-from json import dumps
+import json
+from DATTools import *
 
-url = 'http://terrabrasilis.info/files/deterb/deter_public.zip'
-filename = wget.download(url)
-zip_ref = zipfile.ZipFile(filename, 'r')
-zip_ref.extractall('.')
-zip_ref.close()
+tools = DATTools()
 
-filename = 'deter_public.shp'
-# Ler arquivo SHP e filtrar pela classe ['DESMATAMENTO_CR','DESMATAMENTO_VEG','MINERACAO']
-# Inserir em banco de dados Postgis
+jsonData = json.loads(open("config.json", "r").read())
+url = jsonData["url"]
+outputName = jsonData["outputName"]
+tableName = jsonData["tableName"]
 
-#Dados de Acesso (Postgis)
-#usuario: solved
-#senha: qazx74123
-#url: pgsql03-farm62.kinghost.net:5432
+#fileName = "deter_public.shp"
+fileName = tools.getShapeFile(url)
+tools.writeNewShapeFile(fileName, outputName)
+tools.sendToPostgis(outputName, tableName)
