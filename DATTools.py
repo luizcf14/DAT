@@ -153,6 +153,7 @@ class DATTools:
             try:
                 if (taskCount % 10) == 0:
                     cursor.execute(format_point_query)
+                    format_point_query = ''
                     connection.commit()
             except psycopg2.Error as error:
                 connection.rollback()
