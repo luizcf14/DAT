@@ -148,11 +148,12 @@ class DATTools:
             point_query = """INSERT INTO {} ({}) VALUES ({} ST_Multi (ST_GeomFromText('POLYGON({})', 4674)))"""
 
             # Populate our query template with actual data.
-            format_point_query = str(point_query).format(tableName, field_string, attributes, poly)
+            format_point_query += str(point_query).format(tableName, field_string, attributes, poly)
 
             try:
-                cursor.execute(format_point_query)
-                connection.commit()
+                if (taskCount % 10) == 0:
+                    cursor.execute(format_point_query)
+                    connection.commit()
             except psycopg2.Error as error:
                 connection.rollback()
 
