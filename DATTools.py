@@ -54,7 +54,7 @@ class DATTools:
         jsonData = json.loads(open("login.json", "r").read())
 
         # Set up the datbase connection
-        connection = psycopg2.connect(host=jsonData["host"], user=jsonData["user"], password=jsonData["password"])
+        connection = psycopg2.connect(dbname="mapbiomas_alertas",host=jsonData["host"], user=jsonData["user"], password=jsonData["password"])
 
         # Get the database cursor to execute queries
         cursor = connection.cursor()
@@ -148,12 +148,11 @@ class DATTools:
             point_query = """INSERT INTO {} ({}) VALUES ({} ST_Multi (ST_GeomFromText('POLYGON({})', 4674)))"""
 
             # Populate our query template with actual data.
-            format_point_query += str(point_query).format(tableName, field_string, attributes, poly)
-
+            format_point_query = str(point_query).format(tableName, field_string, attributes, poly)
+            
             try:
+                cursor.execute(format_point_query)
                 if (taskCount % 10) == 0:
-                    cursor.execute(format_point_query)
-                    format_point_query = ''
                     connection.commit()
             except psycopg2.Error as error:
                 connection.rollback()
