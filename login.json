@@ -1,5 +1,5 @@
 {
- "url"         :  "www.site.com",
-  "outputName" :  "test.shp",
-  "tableName"  :  "table" 
+  "host"      :  "www.site.com",
+  "user"      :  "usuario",
+  "password"  :  "123456789" 
 }
