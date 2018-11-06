@@ -4,13 +4,13 @@ import psycopg2
 import shapefile
 import json
 import sys
+from datetime import datetime
 
 class DATTools:
 
     def __init__(self):
         #Contructor
         pass
-
 
     def getShapeFile(self, location):
         print("Baixando arquivos...")
@@ -31,12 +31,30 @@ class DATTools:
             newShp = shapefile.Writer(outputName, shapeType=5)
             fields = sf.fields[1:]
             newShp.fields = fields
-            
+            # Set up the datbase connection
+            print("Enviando dados para o PostGis.")
+            #Open File. Read File. Loads like JSON
+            jsonData = json.loads(open("login.json", "r").read())
+            con = psycopg2.connect(dbname="mapbiomas_alertas",host=jsonData["host"], user=jsonData["user"], password=jsonData["password"])
+
+            # Get the database cursor to execute queries
+            cur = con.cursor()
+            lastdate = datetime.strptime('2017-01-01','%Y-%m-%d')
+            try:
+                cur.execute("SELECT detection_date FROM consolidated_alerts WHERE source like 'deter-b' ORDER BY detection_date DESC LIMIT 1;")
+                rows = cur.fetchall()
+                for row in rows:
+                    lastdate = datetime.strptime(row['detection_date'],'%Y-%m-%d')
+            except:
+                print("I can't SELECT detection_date from database")
+            print(lastdate)
             totalTasks = len(sf)
             taskCount  = 1
             for d in sf.iterShapeRecords():
                 className = d.record['CLASSNAME']
-                if className == 'DESMATAMENTO_CR' or className == 'DESMATAMENTO_VEG' or className == 'MINERACAO':
+                date = datetime.strptime(str(d.record['DATE']),'%Y-%m-%d')
+               
+                if (className == 'DESMATAMENTO_CR' or className == 'DESMATAMENTO_VEG' or className == 'MINERACAO') and date >= lastdate :
                     newShp.record(*d.record)
                     newShp.shape(d.shape)# d.shape.points
                 self.progressBar(taskCount, totalTasks)
@@ -46,7 +64,7 @@ class DATTools:
         except IOError:
             print("Error durante a escrita do Shapefile.")
             exit()
-        return True
+        return outputName
 
     def sendToPostgis(self, fileName, tableName):
         print("Enviando dados para o PostGis.")
@@ -170,7 +188,13 @@ class DATTools:
             self.progressBar(taskCount, totalTasks)
             taskCount += 1
         # Everything went ok so let's update the database.
-        print()        
+        print('Creating Table') 
+        try:
+            cursor.execute("create table consolidated_alerts_tmp_deterb as SELECT id as gid,to_date(date,'YYYY-MM-DD') as detection_date,current_date as insertion_date, 'deter-b' as source,sensor,geom as geom  FROM newdatabase; drop table newdatabase;")
+            connection.commit()
+        except psycopg2.Error as subError:
+                        print("Não foi possível criar tabela consolidated_alerts_tmp_dertb.")
+                        exit()
         connection.close()
         print("Finalizado com sucesso.")
 
